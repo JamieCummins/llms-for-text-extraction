@@ -1,3 +1,56 @@
+#sticky-div {
+    position: fixed;
+    top: 0; /* Distance from the top of the viewport */
+    z-index: 1000; /* Ensures it stays above other elements */
+    background-color: white; /* Prevents overlapping content visibility */
+    padding: 10px;
+    width: 100%;
+    text-align: center;
+    display: flex;
+}
+
+#main-heading {
+    display: flex;
+    font-size: 4vw;
+    align-items: center; /* Centers items vertically */
+    justify-content: center;
+    text-align: center;
+}
+
+@media (min-width: 600px) {
+    #main-heading {
+        font-size: 3.5vw;
+    }
+}
+
+@media (min-width: 1200px) {
+    #main-heading {
+        font-size: 3.5vw;
+    }
+}
+
+.quarto-title-meta {
+    display: flex;
+    margin-top: 7.5vh;
+    justify-content: space-between; /* Pushes items to opposite sides */
+    align-items: center; /* Aligns items vertically in the center (optional) */
+}
+
+#title-block-header {
+    background-color: white; /* Makes the entire header background white */
+    width: 100vw; /* Ensures it spans the full width of the viewport */
+    box-shadow: 0px 2px 4px rgba(0, 0, 0, 0.1); /* Optional: Adds a subtle shadow for visual separation */
+    position: sticky; /* Keeps it visible at the top of the page when scrolling */
+    top: 0; /* Ensures the sticky position is at the very top */
+    z-index: 1000; /* Keeps the header above other elements */
+    margin: 0;
+}
+
+
+.quarto-title {
+    display: block;
+}
+
 .blog_image {
     max-width: 100%;
     margin: auto;
@@ -21,6 +74,7 @@
 }
 
 .toc {
+    display: none;
     position: fixed;
     right: 20px;
     top: 100px;
@@ -29,8 +83,27 @@
     padding-left: 10px;
     font-size: 0.9em;
     background: #f9f9f9;
-    height: 80%; /* Adjust as needed */
-    overflow-y: auto; /* Enable scrolling for long lists */
+    height: 80%;
+    overflow-y: auto;
+    transition: all 0.3s ease-in-out;
+}
+
+.toggle-button {
+    position: fixed;
+    right: 20px;
+    top: 10px;
+    padding: 5px 10px;
+    font-size: 0.9em;
+    cursor: pointer;
+    background-color: #007BFF;
+    color: white;
+    border: none;
+    border-radius: 3px;
+    transition: background-color 0.3s ease;
+}
+
+.toggle-button:hover {
+    background-color: #0056b3;
 }
 
 .toc h3 {

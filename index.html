@@ -9,6 +9,12 @@
 <meta name="author" content="Jamie Cummins">
 <meta name="dcterms.date" content="2024-11-19">
 
+<meta property="og:title" content="Text Extraction Using LLMs" />
+<meta property="og:description" content="A brief tutorial with reusable code." />
+<meta property="og:image" content="information_extraction_from_books_using_llms_files/assets/extraction.png" />
+<meta property="og:url" content="https://jamiecummins.github.io/llms-for-text-extraction/" />
+<meta property="og:type" content="website" />
+
 <title>Extracting unstructured information from books using large language models</title>
 <style>
 code{white-space: pre-wrap;}
@@ -80,43 +86,43 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <main class="content" id="quarto-document-content">
 
 <header id="title-block-header" class="quarto-title-block default">
-<div class="quarto-title">
-<h1 class="title">Extracting unstructured information from books using large language models</h1>
+  <div id="sticky-div">
+    <div class="quarto-title">
+      <h1 class="title" id="main-heading">Information extraction using LLMs</h1>
+      <button id="toggle-toc" class="toggle-button">Show ToC</button>
+    </div>
+  </div>
+
+</header>
+
+<div class="quarto-title-meta">
+  <div>
+    <div class="quarto-title-meta-heading"><b>Author</b>
+    </div>
+      <div class="quarto-title-meta-contents">
+        <p>Jamie Cummins </p>
+      </div>
+  </div>
+  <div>
+    <div class="quarto-title-meta-heading"><b>Published</b></div>
+      <div class="quarto-title-meta-contents">
+        <p class="date">November 19, 2024</p>
+  </div>
+</div>  
 </div>
 
 
 
-<div class="quarto-title-meta">
-
-    <div>
-    <div class="quarto-title-meta-heading">Author</div>
-    <div class="quarto-title-meta-contents">
-             <p>Jamie Cummins </p>
-          </div>
+<div>
+  <div id="toc" class="toc">
+      <h3>Contents</h3>
+      <ul>
+          <li><a href="#the-problem">The problem</a></li>
+          <li><a href="#the-approach">The approach</a></li>
+          <li><a href="#the-code">The code</a></li>
+          <li><a href="#wrapping-up">Wrapping up</a></li>
+      </ul>
   </div>
-    
-    <div>
-    <div class="quarto-title-meta-heading">Published</div>
-    <div class="quarto-title-meta-contents">
-      <p class="date">November 19, 2024</p>
-    </div>
-  </div>
-  
-    
-  </div>
-  
-
-
-</header>
-
-<div class="toc">
-  <h3>Contents</h3>
-  <ul>
-      <li><a href="#the-problem">The problem</a></li>
-      <li><a href="#the-approach">The approach</a></li>
-      <li><a href="#the-code">The code</a></li>
-      <li><a href="#wrapping-up">Wrapping up</a></li>
-  </ul>
 </div>
 
 
@@ -797,6 +803,19 @@ window.document.addEventListener("DOMContentLoaded", function (event) {
       });
     }
   }
+});
+
+document.getElementById("toggle-toc").addEventListener("click", function () {
+    const toc = document.getElementById("toc");
+    const button = document.getElementById("toggle-toc");
+
+    if (toc.style.display === "none" || toc.style.display === "") {
+        toc.style.display = "block"; // Show TOC
+        button.textContent = "Hide TOC";
+    } else {
+        toc.style.display = "none"; // Hide TOC
+        button.textContent = "Show TOC";
+    }
 });
 </script>
 </div> <!-- /content -->
