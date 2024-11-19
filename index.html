@@ -89,7 +89,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   <div id="sticky-div">
     <div class="quarto-title">
       <h1 class="title" id="main-heading">Information extraction using LLMs</h1>
-      <button id="toggle-toc" class="toggle-button">Show ToC</button>
+      <button id="toggle-toc" class="toggle-button">Show TOC</button>
     </div>
   </div>
 
@@ -360,7 +360,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <span id="cb6-31"><a href="#cb6-31" aria-hidden="true" tabindex="-1"></a><span class="co"># extract the main text output of the LLM</span></span>
 <span id="cb6-32"><a href="#cb6-32" aria-hidden="true" tabindex="-1"></a>validation_output <span class="op">=</span> validation_response.choices[<span class="dv">0</span>].message.content</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>Sample output I got from this on some test data (I also ran this on the actual data, and there were about 10 actual errors; but by that point I had already made the meme below and I wanted to share it):</p>
-<pre><code id="gpt-output">The following rows contain entries in the 'Country' column that appear erroneous:
+<pre><code>The following rows contain entries in the 'Country' column that appear erroneous:
 
 - Row 39: "Switz." should likely be "Switzerland."
 - Row 462: There's "S. Africa," which is a common abbreviation for "South Africa."
@@ -825,7 +825,7 @@ document.getElementById("toggle-toc").addEventListener("click", function () {
 
 </body>
 <footer class="footnote">
-  <p>Special thank you to Saloni for reading over a draft of this post and helping prevent me from accidentally sharing copyrighted materials!</p>
+  <p>Thank you to Saloni and Julia Rohrer for reading over drafts of this post, and to Saloni in particular for helping prevent me from accidentally sharing copyrighted materials!</p>
 </footer>
 
 </html>
