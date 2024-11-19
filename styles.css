@@ -15,6 +15,7 @@
     align-items: center; /* Centers items vertically */
     justify-content: center;
     text-align: center;
+    line-height: 5vh;
 }
 
 @media (min-width: 600px) {
