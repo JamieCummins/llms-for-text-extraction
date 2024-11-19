@@ -1,0 +1,812 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.6.36">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+<meta name="author" content="Jamie Cummins">
+<meta name="dcterms.date" content="2024-11-19">
+
+<title>Extracting unstructured information from books using large language models</title>
+<style>
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+/* CSS for syntax highlighting */
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { display: inline-block; text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+  }
+pre.numberSource { margin-left: 3em;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+</style>
+
+
+<script src="information_extraction_from_books_using_llms_files/libs/clipboard/clipboard.min.js"></script>
+<script src="information_extraction_from_books_using_llms_files/libs/quarto-html/quarto.js"></script>
+<script src="information_extraction_from_books_using_llms_files/libs/quarto-html/popper.min.js"></script>
+<script src="information_extraction_from_books_using_llms_files/libs/quarto-html/tippy.umd.min.js"></script>
+<script src="information_extraction_from_books_using_llms_files/libs/quarto-html/anchor.min.js"></script>
+<link href="information_extraction_from_books_using_llms_files/libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="information_extraction_from_books_using_llms_files/libs/quarto-html/quarto-syntax-highlighting-01c78b5cd655e4cd89133cf59d535862.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<script src="information_extraction_from_books_using_llms_files/libs/bootstrap/bootstrap.min.js"></script>
+<link href="information_extraction_from_books_using_llms_files/libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="information_extraction_from_books_using_llms_files/libs/bootstrap/bootstrap-e19dc0c07aeef78048e587c3f1edba7a.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
+<link rel="stylesheet" href="styles.css">
+
+</head>
+
+<body class="fullcontent">
+
+<div id="quarto-content" class="page-columns page-rows-contents page-layout-article">
+
+<main class="content" id="quarto-document-content">
+
+<header id="title-block-header" class="quarto-title-block default">
+<div class="quarto-title">
+<h1 class="title">Extracting unstructured information from books using large language models</h1>
+</div>
+
+
+
+<div class="quarto-title-meta">
+
+    <div>
+    <div class="quarto-title-meta-heading">Author</div>
+    <div class="quarto-title-meta-contents">
+             <p>Jamie Cummins </p>
+          </div>
+  </div>
+    
+    <div>
+    <div class="quarto-title-meta-heading">Published</div>
+    <div class="quarto-title-meta-contents">
+      <p class="date">November 19, 2024</p>
+    </div>
+  </div>
+  
+    
+  </div>
+  
+
+
+</header>
+
+<div class="toc">
+  <h3>Contents</h3>
+  <ul>
+      <li><a href="#the-problem">The problem</a></li>
+      <li><a href="#the-approach">The approach</a></li>
+      <li><a href="#the-code">The code</a></li>
+      <li><a href="#wrapping-up">Wrapping up</a></li>
+  </ul>
+</div>
+
+
+<section id="extracting-unstructured-information-from-books-using-large-language-models" class="level1">
+<section id="the-problem" class="level2">
+<h2 class="anchored" data-anchor-id="the-problem">The problem:</h2>
+<p><a href="https://ourworldindata.org/team/saloni-dattani">Saloni Dattani</a> writes excellent articles on many topics (OK, mostly about death, but still). One of those topics is related to <a href="https://ourworldindata.org/antipsychotic-medications-timeline">when different types of drugs were developed</a>.</p>
+<p>She mentioned a problem that she has encountered when trying to prepare data for this type of article: data on drug developments are often hard to access! There are <a href="https://www.fda.gov/drugs/development-approval-process-drugs/drug-approvals-and-databases">datasets</a> for <em>currently available</em> drugs, but not for historical ones, which would help visualize drug development over time. This data isn’t typically found in handy, machine-readable tables or in structured public repositories.</p>
+<p>Instead, they’re often only compiled in books, papers, or manuals. And while those books may be digitized, the relevant data are (at best) in a semi-structured format, and typically completely unstructured.</p>
+<p>In Saloni’s case, the data for drugs she was interested in were in 25 pdfs (dividing drug names alphabetically, skipping the letter Y) and contained information in a format like the below image. For copyright reasons the original content can’t be reproduced publicly, but I have made a recreation based on one of psychology’s greatest contributions to the scientific literature:</p>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+  <img src="information_extraction_from_books_using_llms_files/assets/book_parody.png" alt="book_parody.png" class="blog_image">
+<figcaption>If only models from chemistry were actually this robust.</figcaption>
+</figure>
+</div>
+<p>The process of extracting the desired information (Drug Name, Therapeutic Function, Trade Name, Country, and Year) would take a human a long time. I haven’t counted how many pages there are in total among all of the pdfs, but there are at least a couple of thousand. And there are typically multiple trade names per drug, each of which would require entry in its own separate row in an ideally structured dataset.</p>
+<p>Let’s say there are 2000 pages, and an average of 3 trade names per drug (so 3 rows per drug to be inputted). Even if the entry for each row took 5 seconds (which I think is being pretty generous to how quickly someone could do this) this would mean a human, working nonstop, would take about 16 hours to do all of this. Those are valuable hours they could instead be using to sleep or create shareholder value. I couldn’t stand for this. Saloni deserves better.</p>
+<p>Large language models are perfect for a repetitive task like this. Below I’ll describe how to tackle this (and similar) problems, and provide code which can be used for this purpose.</p>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+  <img src="information_extraction_from_books_using_llms_files/assets/shareholders.png" alt="shareholders.png" class="blog_image">
+<figcaption>We were born for this.</figcaption>
+</figure>
+</div>
+</section>
+<section id="the-approach" class="level2">
+<h2 class="anchored" data-anchor-id="the-approach">The approach:</h2>
+<p>We can break this whole problem down into 3 simple steps.</p>
+<p><strong>Step 1:</strong> we need to process the pdfs into text. In doing this, we need to (i) ensure that the order of content within the pdfs is maintained (i.e., content should be extracted in the order it appears visually in each book), and (ii) trim parts of the book that will be unnecessary from the text. This latter step is important to reduce the number of input tokens, which will both keep the LLM on-task and reduce the cost of calling the OpenAI API. In particular, I noticed that all of the relevant information Saloni needed was contained <em>before</em> the lengthy “Manufacturing Process” section, meaning we could trim this out completely for each drug. This was good news, because some of those descriptions are…..really, really long.</p>
+<p><strong>Step 2:</strong> After this we need to get our LLM running. To do this, we need to specify a prompt for the LLM which includes the extracted text from the step above. Additionally, we would like the output of the LLM to be deterministic (i.e., that given the same input, the output will be identical across calls, which ensures reproducibility). Not everyone may know this, but determinism in LLM output can be achieved very simply by setting the <code>temperature</code> hyperparameter to <code>0</code>. We also need to ensure that the LLM output is in a consistent format, and ensure that it could be combined with other iterations.</p>
+<p><strong>Step 3:</strong> Lastly, we need to iterate this process over every pdf! So…let’s do that. The code below describes this process.</p>
+</section>
+<section id="the-code" class="level2">
+<h2 class="anchored" data-anchor-id="the-code">The code:</h2>
+<section id="step-0-import-dependencies" class="level3">
+<h3 class="anchored" data-anchor-id="step-0-import-dependencies">Step 0: Import dependencies</h3>
+<p>Here I import the Python libraries we will need for this: <ul><li><code>fitz</code> for parsing the pdfs</li><li><code>re</code> for the easy application of regular expressions for text parsing/removal</li><li><code>openai.OpenAI</code> for accessing ChatGPT’s API</li><li><code>google.colab.userdata</code> for accessing secret keys within the Colab notebook (aka, where I have stored my API key)</li><li><code>pandas</code> for handling LLM output and exporting dataframes</li><li><code>os</code> for handling file directory stuff</li><li><code>io.StringIO</code> to help parse the output from the LLM into a format readable for pandas</p></ul>
+<p>All of the above modules, except for <code>fitz</code>, are available in the Google Colab environment already. For those unfamiliar with Colab: to install <code>fitz</code>, you’ll need to run the commented-out line <code>!pip install pymupdf</code> below on your first run of this code (and every subsequent first run after your current Colab session has ended).</p>
+<p>In the section below I also initialise the OpenAI client using my API key. If you want to use this yourself, you’ll need to either ensure you have an API key stored as a secret key in Colab called <code>openai_api</code>, or replace <code>userdata.get('openai_api')</code> with your API key as a string (I would not recommend exposing your API like this though!).</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="co">#!pip install pymupdf # once this has been run in your session once, you can comment it out</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> re</span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> openai <span class="im">import</span> OpenAI</span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> fitz  <span class="co"># this is just an alias for PyMuPDF, I don't know why</span></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> google.colab <span class="im">import</span> userdata</span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> pandas <span class="im">as</span> pd</span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> os</span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> io <span class="im">import</span> StringIO</span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a><span class="co"># initialise openAI client with secret API key (sorry, you can't have mine, I'm broke already)</span></span>
+<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a>openai_client <span class="op">=</span> OpenAI(</span>
+<span id="cb1-12"><a href="#cb1-12" aria-hidden="true" tabindex="-1"></a>    api_key <span class="op">=</span> userdata.get(<span class="st">'openai_api'</span>),</span>
+<span id="cb1-13"><a href="#cb1-13" aria-hidden="true" tabindex="-1"></a>    timeout <span class="op">=</span> <span class="fl">900.0</span> <span class="co"># we set a pretty long timeout (15 mins) since some of these books take some time</span></span>
+<span id="cb1-14"><a href="#cb1-14" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</section>
+<section id="step-1-define-text-processing-and-data-extraction-function" class="level3">
+<h3 class="anchored" data-anchor-id="step-1-define-text-processing-and-data-extraction-function">Step 1: Define text processing and data extraction function</h3>
+<p>One important further consideration not mentioned above: pdfs are weird. If you just feed them into fitz, you’ll often find odd behavior where text is not rendered in the order that you see it visually in the pdf, which leads to some problematic and undesireable output. For example, relevant text information about the drug might be rendered in the middle of a paragraph in the “Manufacturing Process” section. Since we plan to filter out the Manufacturing Process section, we would lose relevant data in this example. There is, fortunately, a simple solution: we just iterate over each page of the pdf and extract information in blocks based on the their coordinates in the pdf page. This keeps everything nice and orderly, and preserves the validity of any heuristics for extraction we might come up with based on the visual appearance of the pdf!</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> parse_text_for_llm(pdf_path):</span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>    <span class="co">"""</span></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a><span class="co">    Processes a single PDF file:</span></span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a><span class="co">    - Reads and combines text from the PDF in order.</span></span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a><span class="co">    - Removes unwanted sections between "Manufacturing Process" and "References", which saves us a bunch of tokens.</span></span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a><span class="co">    """</span></span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Load the PDF file</span></span>
+<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a>    doc <span class="op">=</span> fitz.<span class="bu">open</span>(pdf_path)</span>
+<span id="cb2-9"><a href="#cb2-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-10"><a href="#cb2-10" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Initialize list to store ordered text blocks</span></span>
+<span id="cb2-11"><a href="#cb2-11" aria-hidden="true" tabindex="-1"></a>    all_text_blocks <span class="op">=</span> []</span>
+<span id="cb2-12"><a href="#cb2-12" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-13"><a href="#cb2-13" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Extract and order text blocks from all pages</span></span>
+<span id="cb2-14"><a href="#cb2-14" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> page_num <span class="kw">in</span> <span class="bu">range</span>(doc.page_count):</span>
+<span id="cb2-15"><a href="#cb2-15" aria-hidden="true" tabindex="-1"></a>        page <span class="op">=</span> doc[page_num]</span>
+<span id="cb2-16"><a href="#cb2-16" aria-hidden="true" tabindex="-1"></a>        blocks <span class="op">=</span> page.get_text(<span class="st">"blocks"</span>)  <span class="co"># Extract text as blocks with coordinates</span></span>
+<span id="cb2-17"><a href="#cb2-17" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-18"><a href="#cb2-18" aria-hidden="true" tabindex="-1"></a>        <span class="co"># Sort blocks by their vertical (y) position for correct reading order</span></span>
+<span id="cb2-19"><a href="#cb2-19" aria-hidden="true" tabindex="-1"></a>        blocks.sort(key<span class="op">=</span><span class="kw">lambda</span> block: (block[<span class="dv">1</span>], block[<span class="dv">0</span>]))  <span class="co"># Sort by y, then x coordinate</span></span>
+<span id="cb2-20"><a href="#cb2-20" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-21"><a href="#cb2-21" aria-hidden="true" tabindex="-1"></a>        <span class="co"># Append sorted text from blocks to list</span></span>
+<span id="cb2-22"><a href="#cb2-22" aria-hidden="true" tabindex="-1"></a>        page_text <span class="op">=</span> <span class="st">" "</span>.join(block[<span class="dv">4</span>] <span class="cf">for</span> block <span class="kw">in</span> blocks)</span>
+<span id="cb2-23"><a href="#cb2-23" aria-hidden="true" tabindex="-1"></a>        all_text_blocks.append(page_text)</span>
+<span id="cb2-24"><a href="#cb2-24" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-25"><a href="#cb2-25" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Combine all ordered text into a single string</span></span>
+<span id="cb2-26"><a href="#cb2-26" aria-hidden="true" tabindex="-1"></a>    full_text <span class="op">=</span> <span class="st">" "</span>.join(all_text_blocks)</span>
+<span id="cb2-27"><a href="#cb2-27" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-28"><a href="#cb2-28" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Regex pattern to match and remove unwanted sections</span></span>
+<span id="cb2-29"><a href="#cb2-29" aria-hidden="true" tabindex="-1"></a>    unwanted_section_pattern <span class="op">=</span> re.<span class="bu">compile</span>(<span class="vs">r"(Manufacturing Process)(.*?)(?=References)"</span>, re.DOTALL <span class="op">|</span> re.IGNORECASE)</span>
+<span id="cb2-30"><a href="#cb2-30" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-31"><a href="#cb2-31" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Remove all instances of unwanted sections within the combined text</span></span>
+<span id="cb2-32"><a href="#cb2-32" aria-hidden="true" tabindex="-1"></a>    cleaned_text <span class="op">=</span> re.sub(unwanted_section_pattern, <span class="vs">r"\1\n"</span>, full_text)</span>
+<span id="cb2-33"><a href="#cb2-33" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-34"><a href="#cb2-34" aria-hidden="true" tabindex="-1"></a>    cleaned_text <span class="op">=</span> cleaned_text.replace(<span class="st">";"</span>, <span class="st">","</span>) <span class="co"># remove semi-colons so that they can function as separators in the csv</span></span>
+<span id="cb2-35"><a href="#cb2-35" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-36"><a href="#cb2-36" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span>(cleaned_text)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</section>
+<section id="step-2-call-the-llm" class="level3">
+<h3 class="anchored" data-anchor-id="step-2-call-the-llm">Step 2: Call the LLM</h3>
+<p>We first define the prompt that the LLM will receive. Then we define a function which takes the cleaned text as input, combines this with the pre-defined prompt, and feeds this to the LLM. The prompt specifies that the LLM output should be in a semi-colon-separated csv-friendly output table. Then finally we do a little bit of extra cleaning, and feed the model output to pandas to make it into a nice, exportable csv, which is then also saved in the Colab environment.</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Prepare prompt for the LLM</span></span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>prompt <span class="op">=</span> (</span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>        <span class="ss">f"Below is the content of a book containing information about different drugs. "</span></span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>        <span class="ss">f"Each section starts with the drug name, which can be identified since it will be in all caps, and followed immediately by the heading 'Therapeutic Function'. "</span></span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a>        <span class="ss">f"Please extract the following information for each drug:</span><span class="ch">\n</span><span class="ss">"</span></span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a>        <span class="ss">f"1. Drug name, 2. Therapeutic Function, 3. Trade Name, 4. Country, and 5. Year Introduced.</span><span class="ch">\n</span><span class="ss">"</span></span>
+<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a>        <span class="ss">f"NEVER extract the manufacturer.</span><span class="ch">\n</span><span class="ss">"</span></span>
+<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a>        <span class="ss">f"Many drugs will have multiple trade names, countries, and years of introduction; document all.</span><span class="ch">\n</span><span class="ss">"</span></span>
+<span id="cb3-9"><a href="#cb3-9" aria-hidden="true" tabindex="-1"></a>        <span class="ss">f"Output the extracted text in a csv table using semi-colons as separators with the above headings, allowing for multiple rows per drug when there are multiple trade names/countries/years.</span><span class="ch">\n</span><span class="ss">"</span></span>
+<span id="cb3-10"><a href="#cb3-10" aria-hidden="true" tabindex="-1"></a>        <span class="ss">f"Your output should begin with the first column name and with NO TRAILING CHARACTERS or text before or after the table.</span><span class="ch">\n</span><span class="ss">"</span></span>
+<span id="cb3-11"><a href="#cb3-11" aria-hidden="true" tabindex="-1"></a>        <span class="ss">f"Ensure that each row has exactly 5 columns, which correspond to the 5 column names above.</span><span class="ch">\n</span><span class="ss">"</span></span>
+<span id="cb3-12"><a href="#cb3-12" aria-hidden="true" tabindex="-1"></a>        <span class="ss">f"Do not return any commentary or content beyond the table itself. Ensure the table is in an format easily exportable to a csv and uses semi-colons as the separator.</span><span class="ch">\n</span><span class="ss">"</span></span>
+<span id="cb3-13"><a href="#cb3-13" aria-hidden="true" tabindex="-1"></a>        <span class="ss">f"You can find the book text below:</span><span class="ch">\n</span><span class="ss">"</span></span>
+<span id="cb3-14"><a href="#cb3-14" aria-hidden="true" tabindex="-1"></a>    )</span>
+<span id="cb3-15"><a href="#cb3-15" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-16"><a href="#cb3-16" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> get_llm_response(input_text, prompt, pdf_path, save_path):</span>
+<span id="cb3-17"><a href="#cb3-17" aria-hidden="true" tabindex="-1"></a>    <span class="co">"""</span></span>
+<span id="cb3-18"><a href="#cb3-18" aria-hidden="true" tabindex="-1"></a><span class="co">    Calls the LLM, processes and returns its output as a csv:</span></span>
+<span id="cb3-19"><a href="#cb3-19" aria-hidden="true" tabindex="-1"></a><span class="co">    - Sends the cleaned text to the LLM for extraction.</span></span>
+<span id="cb3-20"><a href="#cb3-20" aria-hidden="true" tabindex="-1"></a><span class="co">    - Parses the GPT output and saves it to a CSV file.</span></span>
+<span id="cb3-21"><a href="#cb3-21" aria-hidden="true" tabindex="-1"></a><span class="co">    """</span></span>
+<span id="cb3-22"><a href="#cb3-22" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-23"><a href="#cb3-23" aria-hidden="true" tabindex="-1"></a>    <span class="co"># create the prompt for the model</span></span>
+<span id="cb3-24"><a href="#cb3-24" aria-hidden="true" tabindex="-1"></a>    model_prompt <span class="op">=</span> (<span class="ss">f"</span><span class="sc">{</span>prompt<span class="sc">}</span><span class="ss">"</span> <span class="ss">f"</span><span class="sc">{</span>input_text<span class="sc">}</span><span class="ss">"</span>)</span>
+<span id="cb3-25"><a href="#cb3-25" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-26"><a href="#cb3-26" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Call the OpenAI API to run the data extraction on the cleaned text</span></span>
+<span id="cb3-27"><a href="#cb3-27" aria-hidden="true" tabindex="-1"></a>    response <span class="op">=</span> openai_client.chat.completions.create(</span>
+<span id="cb3-28"><a href="#cb3-28" aria-hidden="true" tabindex="-1"></a>        model<span class="op">=</span><span class="st">"gpt-4o"</span>,</span>
+<span id="cb3-29"><a href="#cb3-29" aria-hidden="true" tabindex="-1"></a>        temperature<span class="op">=</span><span class="dv">0</span>, <span class="co"># I set temp to zero to ensure output is deterministic and replicable!</span></span>
+<span id="cb3-30"><a href="#cb3-30" aria-hidden="true" tabindex="-1"></a>        messages<span class="op">=</span>[{<span class="st">"role"</span>: <span class="st">"user"</span>, <span class="st">"content"</span>: model_prompt}]</span>
+<span id="cb3-31"><a href="#cb3-31" aria-hidden="true" tabindex="-1"></a>        )</span>
+<span id="cb3-32"><a href="#cb3-32" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-33"><a href="#cb3-33" aria-hidden="true" tabindex="-1"></a>    <span class="co"># extract the main output of the LLM</span></span>
+<span id="cb3-34"><a href="#cb3-34" aria-hidden="true" tabindex="-1"></a>    output <span class="op">=</span> response.choices[<span class="dv">0</span>].message.content</span>
+<span id="cb3-35"><a href="#cb3-35" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-36"><a href="#cb3-36" aria-hidden="true" tabindex="-1"></a>    <span class="co"># for some reason the output comes with some stray text characters that mess up csv formatting; this removes them</span></span>
+<span id="cb3-37"><a href="#cb3-37" aria-hidden="true" tabindex="-1"></a>    output_trimmed <span class="op">=</span> re.sub(<span class="vs">r"```(?:csv|python)?\n?"</span>, <span class="st">""</span>, output).strip()</span>
+<span id="cb3-38"><a href="#cb3-38" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-39"><a href="#cb3-39" aria-hidden="true" tabindex="-1"></a>    <span class="co"># converts output to a csv; note that bad lines currently are skipped!</span></span>
+<span id="cb3-40"><a href="#cb3-40" aria-hidden="true" tabindex="-1"></a>    data <span class="op">=</span> pd.read_csv(StringIO(output_trimmed), delimiter<span class="op">=</span><span class="st">";"</span>, on_bad_lines<span class="op">=</span><span class="st">'warn'</span>)</span>
+<span id="cb3-41"><a href="#cb3-41" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-42"><a href="#cb3-42" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Save the data to a CSV</span></span>
+<span id="cb3-43"><a href="#cb3-43" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Generate a CSV file name based on the PDF file name</span></span>
+<span id="cb3-44"><a href="#cb3-44" aria-hidden="true" tabindex="-1"></a>    base_name <span class="op">=</span> os.path.splitext(os.path.basename(pdf_path))[<span class="dv">0</span>]</span>
+<span id="cb3-45"><a href="#cb3-45" aria-hidden="true" tabindex="-1"></a>    csv_filename <span class="op">=</span> <span class="ss">f"</span><span class="sc">{</span>save_path<span class="sc">}</span><span class="ss">/</span><span class="sc">{</span>base_name<span class="sc">}</span><span class="ss">_extracted.csv"</span></span>
+<span id="cb3-46"><a href="#cb3-46" aria-hidden="true" tabindex="-1"></a>    data.to_csv(csv_filename, sep<span class="op">=</span><span class="st">";"</span>, index<span class="op">=</span><span class="va">False</span>)</span>
+<span id="cb3-47"><a href="#cb3-47" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-48"><a href="#cb3-48" aria-hidden="true" tabindex="-1"></a>    <span class="co"># give a little bit of feedback during the process to prove it's not stuck</span></span>
+<span id="cb3-49"><a href="#cb3-49" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="ss">f"Processed </span><span class="sc">{</span>pdf_path<span class="sc">}</span><span class="ss"> and saved output to </span><span class="sc">{</span>csv_filename<span class="sc">}</span><span class="ss">"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</section>
+<section id="step-3-iterate-the-process-over-the-pdfs" class="level3">
+<h3 class="anchored" data-anchor-id="step-3-iterate-the-process-over-the-pdfs">Step 3: Iterate the process over the pdfs</h3>
+<p>We then run the two functions defined above over the list of pdfs. When I did this myself, I pointed the script to folders in my linked Google Drive; however, below I get the code to instead look for the files in the Files component of Colab. note that files stored in Files are only present for the duration of the runtime (hence why I used Drive in my case).</p>
+<p>For illustration, the below code also creates the relevant directories and populates them with some example files, so you can see the process in action.</p>
+<p>In the event that code gets stopped and restarted, I also add some logic that basically prevents already processed files from being reprocessed.</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Specify the folder path where you want to access the books from</span></span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a><span class="co"># this was my path but obviously yours will differ!</span></span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>folder_path <span class="op">=</span> <span class="st">'/content/drive/MyDrive/books_to_be_processed'</span></span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a>save_location <span class="op">=</span> <span class="st">'/content/drive/MyDrive/books_info_extracted_blog'</span></span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a><span class="co"># List all files to be processed</span></span>
+<span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a>pdf_files <span class="op">=</span> [os.path.join(folder_path, f) <span class="cf">for</span> f <span class="kw">in</span> os.listdir(folder_path) <span class="cf">if</span> os.path.isfile(os.path.join(folder_path, f))]</span>
+<span id="cb4-8"><a href="#cb4-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-9"><a href="#cb4-9" aria-hidden="true" tabindex="-1"></a><span class="co"># List already processed files, removing "_extracted.csv" to match original PDF names</span></span>
+<span id="cb4-10"><a href="#cb4-10" aria-hidden="true" tabindex="-1"></a><span class="co"># this was because I did some of this iteratively for boring and dumb reasons</span></span>
+<span id="cb4-11"><a href="#cb4-11" aria-hidden="true" tabindex="-1"></a>already_processed_files <span class="op">=</span> [os.path.splitext(f.replace(<span class="st">"_extracted"</span>, <span class="st">""</span>))[<span class="dv">0</span>] <span class="cf">for</span> f <span class="kw">in</span> os.listdir(save_location) <span class="cf">if</span> f.endswith(<span class="st">".csv"</span>)]</span>
+<span id="cb4-12"><a href="#cb4-12" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-13"><a href="#cb4-13" aria-hidden="true" tabindex="-1"></a><span class="co"># Filter out entries in pdf_files that are in already_processed_files</span></span>
+<span id="cb4-14"><a href="#cb4-14" aria-hidden="true" tabindex="-1"></a>incomplete_pdf_files <span class="op">=</span> [f <span class="cf">for</span> f <span class="kw">in</span> pdf_files <span class="cf">if</span> os.path.splitext(os.path.basename(f))[<span class="dv">0</span>] <span class="kw">not</span> <span class="kw">in</span> already_processed_files]</span>
+<span id="cb4-15"><a href="#cb4-15" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-16"><a href="#cb4-16" aria-hidden="true" tabindex="-1"></a><span class="co"># Process each unprocessed PDF file</span></span>
+<span id="cb4-17"><a href="#cb4-17" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> pdf_file <span class="kw">in</span> incomplete_pdf_files:</span>
+<span id="cb4-18"><a href="#cb4-18" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Run Step 1</span></span>
+<span id="cb4-19"><a href="#cb4-19" aria-hidden="true" tabindex="-1"></a>    step_1_cleaned_text <span class="op">=</span> parse_text_for_llm(pdf_file)</span>
+<span id="cb4-20"><a href="#cb4-20" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-21"><a href="#cb4-21" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Run Step 2</span></span>
+<span id="cb4-22"><a href="#cb4-22" aria-hidden="true" tabindex="-1"></a>    get_llm_response(input_text <span class="op">=</span> step_1_cleaned_text,</span>
+<span id="cb4-23"><a href="#cb4-23" aria-hidden="true" tabindex="-1"></a>                     prompt <span class="op">=</span> prompt,</span>
+<span id="cb4-24"><a href="#cb4-24" aria-hidden="true" tabindex="-1"></a>                     pdf_path <span class="op">=</span> pdf_file,</span>
+<span id="cb4-25"><a href="#cb4-25" aria-hidden="true" tabindex="-1"></a>                     save_path <span class="op">=</span> save_location)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>….and now we just combine the above outputs into a single dataframe!</p>
+<div class="sourceCode" id="cb5"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="co"># List of files to be combined</span></span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a><span class="co"># using the location save_location as defined above!</span></span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a>files_to_be_combined <span class="op">=</span> [</span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a>    os.path.join(save_location, f) <span class="cf">for</span> f <span class="kw">in</span> os.listdir(save_location) <span class="cf">if</span> os.path.isfile(os.path.join(save_location, f))</span>
+<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a>]</span>
+<span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-7"><a href="#cb5-7" aria-hidden="true" tabindex="-1"></a><span class="co"># empty list to store dataframes</span></span>
+<span id="cb5-8"><a href="#cb5-8" aria-hidden="true" tabindex="-1"></a>dataframes <span class="op">=</span> []</span>
+<span id="cb5-9"><a href="#cb5-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-10"><a href="#cb5-10" aria-hidden="true" tabindex="-1"></a><span class="co"># Loop through each file and read it as a pandas dataframe</span></span>
+<span id="cb5-11"><a href="#cb5-11" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> <span class="bu">file</span> <span class="kw">in</span> files_to_be_combined:</span>
+<span id="cb5-12"><a href="#cb5-12" aria-hidden="true" tabindex="-1"></a>        df <span class="op">=</span> pd.read_csv(<span class="bu">file</span>, sep<span class="op">=</span><span class="st">";"</span>)  <span class="co"># Assuming CSV uses semi-colons as separators</span></span>
+<span id="cb5-13"><a href="#cb5-13" aria-hidden="true" tabindex="-1"></a>        dataframes.append(df)</span>
+<span id="cb5-14"><a href="#cb5-14" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-15"><a href="#cb5-15" aria-hidden="true" tabindex="-1"></a><span class="co"># Combine all dataframes into a single dataframe</span></span>
+<span id="cb5-16"><a href="#cb5-16" aria-hidden="true" tabindex="-1"></a>combined_df <span class="op">=</span> pd.concat(dataframes, ignore_index<span class="op">=</span><span class="va">True</span>)</span>
+<span id="cb5-17"><a href="#cb5-17" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-18"><a href="#cb5-18" aria-hidden="true" tabindex="-1"></a><span class="co"># Save the combined dataframe to a new CSV</span></span>
+<span id="cb5-19"><a href="#cb5-19" aria-hidden="true" tabindex="-1"></a>output_csv_path <span class="op">=</span> os.path.join(save_location, <span class="st">"combined_extracted_data.csv"</span>)</span>
+<span id="cb5-20"><a href="#cb5-20" aria-hidden="true" tabindex="-1"></a>combined_df.to_csv(output_csv_path, sep<span class="op">=</span><span class="st">";"</span>, index<span class="op">=</span><span class="va">False</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</section>
+</section>
+<section id="wrapping-up" class="level2">
+<h2 class="anchored" data-anchor-id="wrapping-up">Wrapping up</h2>
+<p>…and that’s it! A really simple, easily modifiable workflow for extracting unstructured information from pdfs and converting it into structured data using a combination of systematic pdf text extraction and large language models. Obviously this is only the first step, and there need to be systematic checks for data quality and accuracy in the extractions (just as we would need if a human did this). We can in principle use another call to our LLM to do a quick, high-level sanity check on a few dimensions: for example, by making sure that all entries in the “Countries” column are in fact countries:</p>
+<div class="sourceCode" id="cb6"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="co"># get the full csv table</span></span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a><span class="co"># again using the save_location directory defined above</span></span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>full_data <span class="op">=</span> pd.read_csv(os.path.join(save_location, <span class="st">"combined_extracted_data.csv"</span>), sep <span class="op">=</span> <span class="st">";"</span>)</span>
+<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a><span class="co"># The data is too big for one call to the LLM, so let's just sample 20% of it</span></span>
+<span id="cb6-6"><a href="#cb6-6" aria-hidden="true" tabindex="-1"></a><span class="co"># we could also split it all up, but this is just a toy example</span></span>
+<span id="cb6-7"><a href="#cb6-7" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> random</span>
+<span id="cb6-8"><a href="#cb6-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-9"><a href="#cb6-9" aria-hidden="true" tabindex="-1"></a>random.seed(<span class="dv">42</span>)</span>
+<span id="cb6-10"><a href="#cb6-10" aria-hidden="true" tabindex="-1"></a>sampled_data <span class="op">=</span> full_data.sample(frac<span class="op">=</span><span class="fl">0.2</span>)</span>
+<span id="cb6-11"><a href="#cb6-11" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-12"><a href="#cb6-12" aria-hidden="true" tabindex="-1"></a><span class="co"># convert the dataframe to a string since LLMs require text data</span></span>
+<span id="cb6-13"><a href="#cb6-13" aria-hidden="true" tabindex="-1"></a>data_as_string <span class="op">=</span> sampled_data.to_string()</span>
+<span id="cb6-14"><a href="#cb6-14" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-15"><a href="#cb6-15" aria-hidden="true" tabindex="-1"></a>country_validation_prompt <span class="op">=</span> (</span>
+<span id="cb6-16"><a href="#cb6-16" aria-hidden="true" tabindex="-1"></a>        <span class="ss">f"Below is text from a csv with 5 columns: 1. Drug name, 2. Therapeutic Function, 3. Trade Name, 4. Country, and 5. Year Introduced.</span><span class="ch">\n</span><span class="ss">"</span></span>
+<span id="cb6-17"><a href="#cb6-17" aria-hidden="true" tabindex="-1"></a>        <span class="ss">f"The country column should contain either a dash (to indicate no data) or the name of a country.</span><span class="ch">\n</span><span class="ss">"</span></span>
+<span id="cb6-18"><a href="#cb6-18" aria-hidden="true" tabindex="-1"></a>        <span class="ss">f"Please go through each row of this text and identify any instances where the entry for the 'Country' column appears erroneous; that is, where its content is neither a country nor a dash indicating no data.</span><span class="ch">\n</span><span class="ss">"</span></span>
+<span id="cb6-19"><a href="#cb6-19" aria-hidden="true" tabindex="-1"></a>        <span class="ss">f"In such cases, please tell me the row number where the erroneous entry can be found.</span><span class="ch">\n</span><span class="ss">"</span></span>
+<span id="cb6-20"><a href="#cb6-20" aria-hidden="true" tabindex="-1"></a>        <span class="ss">f"Here is the text:</span><span class="ch">\n</span><span class="ss">"</span></span>
+<span id="cb6-21"><a href="#cb6-21" aria-hidden="true" tabindex="-1"></a>        <span class="ss">f"</span><span class="sc">{</span>data_as_string<span class="sc">}</span><span class="ss">"</span></span>
+<span id="cb6-22"><a href="#cb6-22" aria-hidden="true" tabindex="-1"></a>    )</span>
+<span id="cb6-23"><a href="#cb6-23" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-24"><a href="#cb6-24" aria-hidden="true" tabindex="-1"></a><span class="co"># Call the OpenAI API to run the simple validation</span></span>
+<span id="cb6-25"><a href="#cb6-25" aria-hidden="true" tabindex="-1"></a>validation_response <span class="op">=</span> openai_client.chat.completions.create(</span>
+<span id="cb6-26"><a href="#cb6-26" aria-hidden="true" tabindex="-1"></a>    model<span class="op">=</span><span class="st">"gpt-4o"</span>,</span>
+<span id="cb6-27"><a href="#cb6-27" aria-hidden="true" tabindex="-1"></a>    temperature<span class="op">=</span><span class="dv">0</span>,</span>
+<span id="cb6-28"><a href="#cb6-28" aria-hidden="true" tabindex="-1"></a>    messages<span class="op">=</span>[{<span class="st">"role"</span>: <span class="st">"user"</span>, <span class="st">"content"</span>: country_validation_prompt}]</span>
+<span id="cb6-29"><a href="#cb6-29" aria-hidden="true" tabindex="-1"></a>    )</span>
+<span id="cb6-30"><a href="#cb6-30" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-31"><a href="#cb6-31" aria-hidden="true" tabindex="-1"></a><span class="co"># extract the main text output of the LLM</span></span>
+<span id="cb6-32"><a href="#cb6-32" aria-hidden="true" tabindex="-1"></a>validation_output <span class="op">=</span> validation_response.choices[<span class="dv">0</span>].message.content</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>Sample output I got from this on some test data (I also ran this on the actual data, and there were about 10 actual errors; but by that point I had already made the meme below and I wanted to share it):</p>
+<pre><code id="gpt-output">The following rows contain entries in the 'Country' column that appear erroneous:
+
+- Row 39: "Switz." should likely be "Switzerland."
+- Row 462: There's "S. Africa," which is a common abbreviation for "South Africa."
+- Row 467: "Switz." appears again and likely represents "Switzerland."
+- Row 715: "Monte Carlo" is not a country; it's an area within Monaco.
+- Row 762: "S. Africa" is again used for "South Africa."
+- Row 763: "E. Germany" refers to the former East Germany,
+which no longer exists as a country.
+- Row 928: "Switz." appears again as likely meant to be "Switzerland."
+
+These instances reflect abbreviations or geographical areas
+rather than the official or recognized country name.</code></pre>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+  <img src="information_extraction_from_books_using_llms_files/assets/same_picture.png" alt="same_picture.png" class="blog_image">
+<figcaption></figcaption>
+</figure>
+</div>
+<p>Of course, it goes without saying that some human-driven validation is needed; in the same manner it would be if a human had done the extraction manually. But doing this initial step with an LLM is <em>much quicker</em> than a human’s manual extraction; it took about an hour for the code above to process all 25 pdfs, so at least 16 times as quick as a human by my back-of-the-envelope calculations. And this workflow can easily be adapted for other problems (e.g., I am currently using a modified version of it for the extraction of numeric values from papers).</p>
+<p>And best of all, Saloni can get back to making more cool charts!</p>
+<img src="information_extraction_from_books_using_llms_files/assets/charts.png" alt="charts.png" class="blog_image">
+</p>
+</section>
+</section>
+
+</main>
+<!-- /main column -->
+<script id="quarto-html-after-body" type="application/javascript">
+window.document.addEventListener("DOMContentLoaded", function (event) {
+  const toggleBodyColorMode = (bsSheetEl) => {
+    const mode = bsSheetEl.getAttribute("data-mode");
+    const bodyEl = window.document.querySelector("body");
+    if (mode === "dark") {
+      bodyEl.classList.add("quarto-dark");
+      bodyEl.classList.remove("quarto-light");
+    } else {
+      bodyEl.classList.add("quarto-light");
+      bodyEl.classList.remove("quarto-dark");
+    }
+  }
+  const toggleBodyColorPrimary = () => {
+    const bsSheetEl = window.document.querySelector("link#quarto-bootstrap");
+    if (bsSheetEl) {
+      toggleBodyColorMode(bsSheetEl);
+    }
+  }
+  toggleBodyColorPrimary();  
+  const icon = "";
+  const anchorJS = new window.AnchorJS();
+  anchorJS.options = {
+    placement: 'right',
+    icon: icon
+  };
+  anchorJS.add('.anchored');
+  const isCodeAnnotation = (el) => {
+    for (const clz of el.classList) {
+      if (clz.startsWith('code-annotation-')) {                     
+        return true;
+      }
+    }
+    return false;
+  }
+  const onCopySuccess = function(e) {
+    // button target
+    const button = e.trigger;
+    // don't keep focus
+    button.blur();
+    // flash "checked"
+    button.classList.add('code-copy-button-checked');
+    var currentTitle = button.getAttribute("title");
+    button.setAttribute("title", "Copied!");
+    let tooltip;
+    if (window.bootstrap) {
+      button.setAttribute("data-bs-toggle", "tooltip");
+      button.setAttribute("data-bs-placement", "left");
+      button.setAttribute("data-bs-title", "Copied!");
+      tooltip = new bootstrap.Tooltip(button, 
+        { trigger: "manual", 
+          customClass: "code-copy-button-tooltip",
+          offset: [0, -8]});
+      tooltip.show();    
+    }
+    setTimeout(function() {
+      if (tooltip) {
+        tooltip.hide();
+        button.removeAttribute("data-bs-title");
+        button.removeAttribute("data-bs-toggle");
+        button.removeAttribute("data-bs-placement");
+      }
+      button.setAttribute("title", currentTitle);
+      button.classList.remove('code-copy-button-checked');
+    }, 1000);
+    // clear code selection
+    e.clearSelection();
+  }
+  const getTextToCopy = function(trigger) {
+      const codeEl = trigger.previousElementSibling.cloneNode(true);
+      for (const childEl of codeEl.children) {
+        if (isCodeAnnotation(childEl)) {
+          childEl.remove();
+        }
+      }
+      return codeEl.innerText;
+  }
+  const clipboard = new window.ClipboardJS('.code-copy-button:not([data-in-quarto-modal])', {
+    text: getTextToCopy
+  });
+  clipboard.on('success', onCopySuccess);
+  if (window.document.getElementById('quarto-embedded-source-code-modal')) {
+    const clipboardModal = new window.ClipboardJS('.code-copy-button[data-in-quarto-modal]', {
+      text: getTextToCopy,
+      container: window.document.getElementById('quarto-embedded-source-code-modal')
+    });
+    clipboardModal.on('success', onCopySuccess);
+  }
+    var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
+    var mailtoRegex = new RegExp(/^mailto:/);
+      var filterRegex = new RegExp('/' + window.location.host + '/');
+    var isInternal = (href) => {
+        return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
+    }
+    // Inspect non-navigation links and adorn them if external
+ 	var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool):not(.about-link)');
+    for (var i=0; i<links.length; i++) {
+      const link = links[i];
+      if (!isInternal(link.href)) {
+        // undo the damage that might have been done by quarto-nav.js in the case of
+        // links that we want to consider external
+        if (link.dataset.originalHref !== undefined) {
+          link.href = link.dataset.originalHref;
+        }
+      }
+    }
+  function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
+    const config = {
+      allowHTML: true,
+      maxWidth: 500,
+      delay: 100,
+      arrow: false,
+      appendTo: function(el) {
+          return el.parentElement;
+      },
+      interactive: true,
+      interactiveBorder: 10,
+      theme: 'quarto',
+      placement: 'bottom-start',
+    };
+    if (contentFn) {
+      config.content = contentFn;
+    }
+    if (onTriggerFn) {
+      config.onTrigger = onTriggerFn;
+    }
+    if (onUntriggerFn) {
+      config.onUntrigger = onUntriggerFn;
+    }
+    window.tippy(el, config); 
+  }
+  const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+  for (var i=0; i<noterefs.length; i++) {
+    const ref = noterefs[i];
+    tippyHover(ref, function() {
+      // use id or data attribute instead here
+      let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+      try { href = new URL(href).hash; } catch {}
+      const id = href.replace(/^#\/?/, "");
+      const note = window.document.getElementById(id);
+      if (note) {
+        return note.innerHTML;
+      } else {
+        return "";
+      }
+    });
+  }
+  const xrefs = window.document.querySelectorAll('a.quarto-xref');
+  const processXRef = (id, note) => {
+    // Strip column container classes
+    const stripColumnClz = (el) => {
+      el.classList.remove("page-full", "page-columns");
+      if (el.children) {
+        for (const child of el.children) {
+          stripColumnClz(child);
+        }
+      }
+    }
+    stripColumnClz(note)
+    if (id === null || id.startsWith('sec-')) {
+      // Special case sections, only their first couple elements
+      const container = document.createElement("div");
+      if (note.children && note.children.length > 2) {
+        container.appendChild(note.children[0].cloneNode(true));
+        for (let i = 1; i < note.children.length; i++) {
+          const child = note.children[i];
+          if (child.tagName === "P" && child.innerText === "") {
+            continue;
+          } else {
+            container.appendChild(child.cloneNode(true));
+            break;
+          }
+        }
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(container);
+        }
+        return container.innerHTML
+      } else {
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(note);
+        }
+        return note.innerHTML;
+      }
+    } else {
+      // Remove any anchor links if they are present
+      const anchorLink = note.querySelector('a.anchorjs-link');
+      if (anchorLink) {
+        anchorLink.remove();
+      }
+      if (window.Quarto?.typesetMath) {
+        window.Quarto.typesetMath(note);
+      }
+      if (note.classList.contains("callout")) {
+        return note.outerHTML;
+      } else {
+        return note.innerHTML;
+      }
+    }
+  }
+  for (var i=0; i<xrefs.length; i++) {
+    const xref = xrefs[i];
+    tippyHover(xref, undefined, function(instance) {
+      instance.disable();
+      let url = xref.getAttribute('href');
+      let hash = undefined; 
+      if (url.startsWith('#')) {
+        hash = url;
+      } else {
+        try { hash = new URL(url).hash; } catch {}
+      }
+      if (hash) {
+        const id = hash.replace(/^#\/?/, "");
+        const note = window.document.getElementById(id);
+        if (note !== null) {
+          try {
+            const html = processXRef(id, note.cloneNode(true));
+            instance.setContent(html);
+          } finally {
+            instance.enable();
+            instance.show();
+          }
+        } else {
+          // See if we can fetch this
+          fetch(url.split('#')[0])
+          .then(res => res.text())
+          .then(html => {
+            const parser = new DOMParser();
+            const htmlDoc = parser.parseFromString(html, "text/html");
+            const note = htmlDoc.getElementById(id);
+            if (note !== null) {
+              const html = processXRef(id, note);
+              instance.setContent(html);
+            } 
+          }).finally(() => {
+            instance.enable();
+            instance.show();
+          });
+        }
+      } else {
+        // See if we can fetch a full url (with no hash to target)
+        // This is a special case and we should probably do some content thinning / targeting
+        fetch(url)
+        .then(res => res.text())
+        .then(html => {
+          const parser = new DOMParser();
+          const htmlDoc = parser.parseFromString(html, "text/html");
+          const note = htmlDoc.querySelector('main.content');
+          if (note !== null) {
+            // This should only happen for chapter cross references
+            // (since there is no id in the URL)
+            // remove the first header
+            if (note.children.length > 0 && note.children[0].tagName === "HEADER") {
+              note.children[0].remove();
+            }
+            const html = processXRef(null, note);
+            instance.setContent(html);
+          } 
+        }).finally(() => {
+          instance.enable();
+          instance.show();
+        });
+      }
+    }, function(instance) {
+    });
+  }
+      let selectedAnnoteEl;
+      const selectorForAnnotation = ( cell, annotation) => {
+        let cellAttr = 'data-code-cell="' + cell + '"';
+        let lineAttr = 'data-code-annotation="' +  annotation + '"';
+        const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+        return selector;
+      }
+      const selectCodeLines = (annoteEl) => {
+        const doc = window.document;
+        const targetCell = annoteEl.getAttribute("data-target-cell");
+        const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+        const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+        const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+        const lineIds = lines.map((line) => {
+          return targetCell + "-" + line;
+        })
+        let top = null;
+        let height = null;
+        let parent = null;
+        if (lineIds.length > 0) {
+            //compute the position of the single el (top and bottom and make a div)
+            const el = window.document.getElementById(lineIds[0]);
+            top = el.offsetTop;
+            height = el.offsetHeight;
+            parent = el.parentElement.parentElement;
+          if (lineIds.length > 1) {
+            const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+            const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+            height = bottom - top;
+          }
+          if (top !== null && height !== null && parent !== null) {
+            // cook up a div (if necessary) and position it 
+            let div = window.document.getElementById("code-annotation-line-highlight");
+            if (div === null) {
+              div = window.document.createElement("div");
+              div.setAttribute("id", "code-annotation-line-highlight");
+              div.style.position = 'absolute';
+              parent.appendChild(div);
+            }
+            div.style.top = top - 2 + "px";
+            div.style.height = height + 4 + "px";
+            div.style.left = 0;
+            let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+            if (gutterDiv === null) {
+              gutterDiv = window.document.createElement("div");
+              gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+              gutterDiv.style.position = 'absolute';
+              const codeCell = window.document.getElementById(targetCell);
+              const gutter = codeCell.querySelector('.code-annotation-gutter');
+              gutter.appendChild(gutterDiv);
+            }
+            gutterDiv.style.top = top - 2 + "px";
+            gutterDiv.style.height = height + 4 + "px";
+          }
+          selectedAnnoteEl = annoteEl;
+        }
+      };
+      const unselectCodeLines = () => {
+        const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+        elementsIds.forEach((elId) => {
+          const div = window.document.getElementById(elId);
+          if (div) {
+            div.remove();
+          }
+        });
+        selectedAnnoteEl = undefined;
+      };
+        // Handle positioning of the toggle
+    window.addEventListener(
+      "resize",
+      throttle(() => {
+        elRect = undefined;
+        if (selectedAnnoteEl) {
+          selectCodeLines(selectedAnnoteEl);
+        }
+      }, 10)
+    );
+    function throttle(fn, ms) {
+    let throttle = false;
+    let timer;
+      return (...args) => {
+        if(!throttle) { // first call gets through
+            fn.apply(this, args);
+            throttle = true;
+        } else { // all the others get throttled
+            if(timer) clearTimeout(timer); // cancel #2
+            timer = setTimeout(() => {
+              fn.apply(this, args);
+              timer = throttle = false;
+            }, ms);
+        }
+      };
+    }
+      // Attach click handler to the DT
+      const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+      for (const annoteDlNode of annoteDls) {
+        annoteDlNode.addEventListener('click', (event) => {
+          const clickedEl = event.target;
+          if (clickedEl !== selectedAnnoteEl) {
+            unselectCodeLines();
+            const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+            if (activeEl) {
+              activeEl.classList.remove('code-annotation-active');
+            }
+            selectCodeLines(clickedEl);
+            clickedEl.classList.add('code-annotation-active');
+          } else {
+            // Unselect the line
+            unselectCodeLines();
+            clickedEl.classList.remove('code-annotation-active');
+          }
+        });
+      }
+  const findCites = (el) => {
+    const parentEl = el.parentElement;
+    if (parentEl) {
+      const cites = parentEl.dataset.cites;
+      if (cites) {
+        return {
+          el,
+          cites: cites.split(' ')
+        };
+      } else {
+        return findCites(el.parentElement)
+      }
+    } else {
+      return undefined;
+    }
+  };
+  var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+  for (var i=0; i<bibliorefs.length; i++) {
+    const ref = bibliorefs[i];
+    const citeInfo = findCites(ref);
+    if (citeInfo) {
+      tippyHover(citeInfo.el, function() {
+        var popup = window.document.createElement('div');
+        citeInfo.cites.forEach(function(cite) {
+          var citeDiv = window.document.createElement('div');
+          citeDiv.classList.add('hanging-indent');
+          citeDiv.classList.add('csl-entry');
+          var biblioDiv = window.document.getElementById('ref-' + cite);
+          if (biblioDiv) {
+            citeDiv.innerHTML = biblioDiv.innerHTML;
+          }
+          popup.appendChild(citeDiv);
+        });
+        return popup.innerHTML;
+      });
+    }
+  }
+});
+</script>
+</div> <!-- /content -->
+
+
+
+
+</body>
+<footer class="footnote">
+  <p>Special thank you to Saloni for reading over a draft of this post and helping prevent me from accidentally sharing copyrighted materials!</p>
+</footer>
+
+</html>
